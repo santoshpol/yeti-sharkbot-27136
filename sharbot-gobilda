@@ -1,0 +1,93 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+@TeleOp(name = "SB27136basicopmodegobildaJava")
+public class SB27136BasicOpmodeGobildaJava extends LinearOpMode {
+
+  private DcMotor motorLeft;
+  private DcMotor motorRight;
+  private CRServo intakeServo;
+  private CRServo rotateServo;
+  private DcMotor motorArm;
+  private DcMotor motorSlide;
+
+  /**
+   * This sample contains the bare minimum Blocks for any regular OpMode. The 3 blue
+   * Comment Blocks show where to place Initialization code (runs once, after touching the
+   * DS INIT button, and before touching the DS Start arrow), Run code (runs once, after
+   * touching Start), and Loop code (runs repeatedly while the OpMode is active, namely not
+   * Stopped).
+   */
+  @Override
+  public void runOpMode() {
+    motorLeft = hardwareMap.get(DcMotor.class, "motorLeft");
+    motorRight = hardwareMap.get(DcMotor.class, "motorRight");
+    intakeServo = hardwareMap.get(CRServo.class, "intakeServo");
+    motorArm = hardwareMap.get(DcMotor.class, "motorArm");
+    rotateServo = hardwareMap.get(CRServo.class, "rotateServo");
+    motorSlide = hardwareMap.get(DcMotor.class, "motorSlide");
+
+    // Put initialization blocks here.
+    final double arm_ticks = 28*250047.0/4913.0*100/20*1/360;
+    final double arm_score = arm_ticks*610;
+    motorArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    motorLeft.setDirection(DcMotor.Direction.REVERSE);
+    motorArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    motorLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    motorRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    motorSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    waitForStart();
+    if (opModeIsActive()) {
+      //Make robot go forward a bit and then make the Arm go to intake position and rotate servo
+      while (opModeIsActive()) {
+        // Put loop blocks here.
+        
+        //Rotate Intake
+        rotateServo.setPower(gamepad2.left_stick_x);
+        //End Rotate Intake
+        
+        //Movement
+        frontRight.setPower((-pivot + vertical) - horizontal);
+        backRight.setPower(-pivot + vertical + horizontal);
+        frontLeft.setPower(pivot + vertical + horizontal);
+        backLeft.setPower((pivot + vertical) - horizontal);
+        //End Movement
+        
+        //Arm
+        motorArm.setPower(gamepad2.left_stick_y);
+        if(motorArm.getPower()>0) {
+          telemetry.addData("Motor is moving down", motorArm.getPower());
+        } else if(motorArm.getPower()<0) {
+          telemetry.addData("Motor is moving up", motorArm.getPower());
+        }
+        //End Arm
+        
+        //Intake and Outake
+        if(gamepad2.left_trigger>0) {
+          intakeServo.setPower(gamepad2.left_trigger);
+        } else if(gamepad2.right_trigger>0) {
+          intakeServo.setPower(-gamepad2.right_trigger);
+        } else{
+          intakeServo.setPower(0);
+        } 
+        while (opModeIsActive() && (motorArm.isBusy())) {idle();}
+        //End Intake and Outake
+        
+        //HANGING
+        //Set the Arm Position to a hanging position using an encoder
+        //END HANGING
+        
+        //Linear Slide
+        motorSlide.setPower(gamepad2.right_stick_y);
+        telemetry.addData("Slide is Working", motorArm.getCurrentPosition());
+        //End of  Linear Slide
+        telemetry.update();
+      }
+    }
+  }
+}

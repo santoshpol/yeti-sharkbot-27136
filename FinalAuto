@@ -1,0 +1,216 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.Telemetry;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+@Autonomous(name = "FinalAuto")
+public class FinalAuto extends LinearOpMode {
+
+  private DcMotorEx frontLeft;
+  private DcMotorEx frontRight;
+  private DcMotorEx backLeft;
+  private DcMotorEx backRight;
+  private CRServo intakeServo;
+  private DcMotorEx motorArm;
+  private DcMotorEx motorSlide;
+  
+  
+  @Override
+  public void runOpMode() {
+    frontLeft = hardwareMap.get(DcMotorEx.class, "frontLeft");
+    backLeft = hardwareMap.get(DcMotorEx.class, "backLeft");
+    frontRight = hardwareMap.get(DcMotorEx.class, "frontRight");
+    backRight = hardwareMap.get(DcMotorEx.class, "backRight");
+    motorArm = hardwareMap.get(DcMotorEx.class, "motorArm");
+    motorSlide = hardwareMap.get(DcMotorEx.class, "motorSlide");
+    intakeServo = hardwareMap.get(CRServo.class, "intakeServo");
+    
+    String power;
+    String slide;
+    
+    waitForStart();
+    frontLeft.setDirection(DcMotor.Direction.REVERSE);
+    backLeft.setDirection(DcMotor.Direction.REVERSE);
+    motorArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    motorSlide.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    
+    motorArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    motorArm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    
+    motorSlide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    motorSlide.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    
+    frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    
+    frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    
+    backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+    
+    backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+  
+    
+    if(opModeIsActive()) {
+      telemetry.addData("Arm Position", motorArm.getCurrentPosition());
+      //Raise Arm
+      motorArm.setTargetPosition(1976);
+      motorArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      motorArm.setVelocity(10000); 
+      
+      //Move forward
+      frontLeft.setTargetPosition(100);
+      frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontLeft.setVelocity(10000);
+      
+      frontRight.setTargetPosition(100);
+      frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontRight.setVelocity(10000);
+      
+      backRight.setTargetPosition(100);
+      backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backRight.setVelocity(10000);
+      
+      backLeft.setTargetPosition(100);
+      backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backLeft.setVelocity(10000);
+    
+      sleep(500);
+      
+      //Turn
+      frontLeft.setTargetPosition(95);
+      frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontLeft.setVelocity(0);
+      
+      backLeft.setTargetPosition(95);
+      backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backLeft.setVelocity(0);
+      
+      frontRight.setTargetPosition(1690);
+      frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontRight.setVelocity(10000);
+      
+      backRight.setTargetPosition(1690);
+      backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backRight.setVelocity(10000);
+      sleep(1000);
+      
+      //Slide extend 1st time
+      motorSlide.setTargetPosition(-3010);
+      motorSlide.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      motorSlide.setVelocity(10000);
+      sleep(200);
+      //Outake
+      intakeServo.setPower(1);
+      sleep(3000);
+      intakeServo.setPower(0);
+      sleep(500);
+      motorSlide.setTargetPosition(-400);
+      motorSlide.setVelocity(10000);
+      sleep(1000);
+      //Reset Encoders
+      frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+      //Reset Encoders
+      frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      sleep(1);
+      motorArm.setTargetPosition(1300);
+      motorArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      motorArm.setVelocity(10000);
+      
+      //Turn Left Negative
+      frontLeft.setTargetPosition(-360);
+      frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontLeft.setVelocity(1000);
+      
+      frontRight.setTargetPosition(0);
+      frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontRight.setVelocity(1000);
+      
+      backRight.setTargetPosition(0);
+      backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backRight.setVelocity(1000);
+      
+      backLeft.setTargetPosition(-360);
+      backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backLeft.setVelocity(1000);
+      sleep(2000);
+      
+      //Reset Encoders
+      frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      
+      //Go Back
+      frontLeft.setTargetPosition(-2000);
+      frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontLeft.setVelocity(1000);
+      
+      frontRight.setTargetPosition(-2000);
+      frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontRight.setVelocity(1000);
+      
+      backRight.setTargetPosition(-2000);
+      backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backRight.setVelocity(1000);
+      
+      backLeft.setTargetPosition(-2000);
+      backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backLeft.setVelocity(1000);
+      sleep(2000);
+      
+            
+      //Reset Encoders
+      frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+      
+      
+      //Turn
+      frontLeft.setTargetPosition(0);
+      frontLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontLeft.setVelocity(1000);
+      
+      frontRight.setTargetPosition(-900);
+      frontRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      frontRight.setVelocity(1000);
+      
+      backRight.setTargetPosition(-900);
+      backRight.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backRight.setVelocity(1000);
+      
+      backLeft.setTargetPosition(0);
+      backLeft.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      backLeft.setVelocity(1000);
+      
+      sleep(1000);
+      
+      motorArm.setTargetPosition(2970);
+      motorArm.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+      motorArm.setVelocity(10000); 
+      
+      sleep(2000);
+    }
+    
+}
+}

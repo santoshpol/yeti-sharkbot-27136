@@ -1,0 +1,68 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+@Autonomous(name = "Mecanum_Auto_Basic")
+public class meacanum_testdrive extends LinearOpMode {
+
+    DcMotor frontLeft, frontRight, backLeft, backRight;
+
+    @Override
+    public void runOpMode() {
+
+        // Hardware mapping
+        frontLeft  = hardwareMap.get(DcMotor.class, "frontLeft");
+        frontRight = hardwareMap.get(DcMotor.class, "frontRight");
+        backLeft   = hardwareMap.get(DcMotor.class, "backLeft");
+        backRight  = hardwareMap.get(DcMotor.class, "backRight");
+
+        // Reverse left side motors
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
+
+        waitForStart();
+
+        if (opModeIsActive()) {
+
+            // FORWARD
+            drive(0.5, 0.5, 0.5, 0.5, 1000);
+
+            // BACKWARD
+            drive(-0.5, -0.5, -0.5, -0.5, 1000);
+
+            // TURN LEFT
+            drive(-0.5, 0.5, -0.5, 0.5, 800);
+
+            // TURN RIGHT
+            drive(0.5, -0.5, 0.5, -0.5, 800);
+
+            // STRAFE RIGHT (crab walk)
+            drive(0.5, -0.5, -0.5, 0.5, 1000);
+
+            // STRAFE LEFT
+            drive(-0.5, 0.5, 0.5, -0.5, 1000);
+
+            stopMotors();
+        }
+    }
+
+    // Helper method
+    private void drive(double fl, double fr, double bl, double br, long time) {
+        frontLeft.setPower(fl);
+        frontRight.setPower(fr);
+        backLeft.setPower(bl);
+        backRight.setPower(br);
+        sleep(time);
+        stopMotors();
+    }
+
+    private void stopMotors() {
+        frontLeft.setPower(0);
+        frontRight.setPower(0);
+        backLeft.setPower(0);
+        backRight.setPower(0);
+        sleep(250);
+    }
+}

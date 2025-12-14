@@ -1,0 +1,65 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
+
+@Autonomous(name = "BallIntake_Auto")
+public class BallIntake_Simple extends LinearOpMode {
+
+    private DcMotor motorIntake;
+    private CRServo servoRamp1;
+    private CRServo servoRamp2;
+
+    private Servo servoPush;
+
+
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+
+        motorIntake  = hardwareMap.get(DcMotor.class, "motorIntake");
+        servoRamp1 = hardwareMap.get(CRServo.class, "servoRamp1");
+        servoRamp2   = hardwareMap.get(CRServo.class, "servoRamp2");
+        servoPush   = hardwareMap.get(Servo.class, "servoPush");
+
+        motorIntake.setDirection(DcMotor.Direction.FORWARD);
+        motorIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        telemetry.addLine("Initialized and waiting");
+        telemetry.update();
+
+
+
+        waitForStart(); // REQUIRED for Autonomous
+
+        if (opModeIsActive()) {
+
+            telemetry.addLine("Autonomous Intake Running");
+            telemetry.update();
+
+
+            // Run intake motors
+            motorIntake.setPower(1.0);
+            servoRamp1.setPower(1.0);
+            servoRamp2.setPower(1.0);
+
+
+    // Run for 3 seconds (change if needed)
+            sleep(2500);
+
+            motorIntake.setPower(0);
+
+            servoRamp1.setPower(0);
+            servoRamp2.setPower(0);
+
+            servoPush.setPosition(0.2); // ~90 degrees
+            sleep(700);
+
+            telemetry.addLine("Intake Stopped");
+            telemetry.update();
+        }
+    }
+}

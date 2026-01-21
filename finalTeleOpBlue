@@ -1,0 +1,181 @@
+package org.firstinspires.ftc.teamcode.SHARKBOT_Robotics_Teamcode;
+
+import com.qualcomm.hardware.dfrobot.HuskyLens;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+
+
+@TeleOp(name = "finalTeleOpBlue")
+
+
+public class finalTeleOpBlue extends LinearOpMode{
+
+
+   private DcMotor frontLeft;
+   private DcMotor backLeft;
+   private DcMotor frontRight;
+   private DcMotor backRight;
+   private DcMotor motorIntake;
+   private CRServo servoRamp1;
+   private CRServo servoRamp2;
+   private CRServo servoRamp3;
+   private Servo servoPush;
+   private DcMotorEx motorOutake;
+   private CRServo rotateservo;
+   private HuskyLens huskyLens;
+
+
+
+
+
+
+
+
+   @Override
+   public void runOpMode(){
+
+
+       //Drivetrain
+       frontLeft = hardwareMap.get(DcMotor.class, "frontLeft");
+       backLeft = hardwareMap.get(DcMotor.class, "backLeft");
+       frontRight = hardwareMap.get(DcMotor.class, "frontRight");
+       backRight = hardwareMap.get(DcMotor.class, "backRight");
+
+
+       //Intake
+       motorIntake = hardwareMap.get(DcMotor.class, "perp");
+
+
+       //Ramp
+       servoRamp1 = hardwareMap.get(CRServo.class, "servoRamp1");
+       servoRamp2 = hardwareMap.get(CRServo.class, "servoRamp2");
+       servoRamp3 = hardwareMap.get(CRServo.class, "servoRamp3");
+       servoPush = hardwareMap.get(Servo.class, "servoPush");
+
+
+       //Outake
+       huskyLens = hardwareMap.get(HuskyLens.class, "huskyLens");
+       rotateservo = hardwareMap.get(CRServo.class, "rotateServo");
+       motorOutake = hardwareMap.get(DcMotorEx.class, "motorOutake");
+
+
+
+
+       frontLeft.setDirection(DcMotor.Direction.REVERSE);
+       backLeft.setDirection(DcMotor.Direction.REVERSE);
+       frontRight.setDirection(DcMotor.Direction.FORWARD);
+       backRight.setDirection(DcMotor.Direction.FORWARD);
+
+
+       frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+       backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+       frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+       backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
+       motorOutake.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+
+
+       huskyLens.selectAlgorithm(HuskyLens.Algorithm.TAG_RECOGNITION);
+
+
+       telemetry.update();
+
+
+       waitForStart();
+       while(opModeIsActive()) {
+           //Drivetrain Movement
+           double vertical = -gamepad1.left_stick_y;
+           double turn = gamepad1.right_stick_x;
+           double horizontal = gamepad1.left_stick_x;
+           frontLeft.setPower(vertical+turn+horizontal);
+           backLeft.setPower(vertical+turn-horizontal);
+           frontRight.setPower(vertical-turn-horizontal);
+           backRight.setPower(vertical-turn+horizontal);
+
+
+           //Spinning Outake, and Servos
+           if(gamepad2.left_trigger>0) {
+               //Outake Motor
+               motorOutake.setVelocity(-1000);
+           }
+           else{
+               //Outake Motor
+               motorOutake.setVelocity(0);
+           }
+
+
+           //Spinning Intake
+           if (gamepad2.right_trigger>0) {
+               motorIntake.setPower(1);
+               servoRamp1.setPower(1);
+
+
+           } else{
+               motorIntake.setPower(0);
+               servoRamp1.setPower(0);
+           }
+
+
+           if(gamepad2.circle) {
+               servoRamp2.setPower(1);
+               servoRamp3.setPower(-1);
+           } else{
+               servoRamp2.setPower(0);
+               servoRamp3.setPower(0);
+           }
+
+
+           //Rotating ServoPush
+           if (gamepad2.dpad_up) {
+               servoPush.setPosition(0);
+               sleep(750);
+               servoPush.setPosition(1);
+           }
+
+
+           HuskyLens.Block[] objects = huskyLens.blocks();
+           telemetry.addData("Objects", objects.length);
+
+
+           HuskyLens.Block target = null;
+
+
+           //Searching for Red April Tag
+           for(int i=0; i<objects.length; i++) {
+               telemetry.addData("HuskyLens Status:", "Active");
+               if (objects[i].id == 2) {
+                   target = objects[i];
+                   break;
+               }
+           }
+
+
+           //Rotating Servo to track object
+           if (target == null){
+               rotateservo.setPower(gamepad2.left_stick_x);
+               telemetry.addData("Mode", "Manual");
+               telemetry.update();
+           }
+           else if(target != null) {
+               telemetry.addData("Mode", "Automated");
+               telemetry.update();
+               double x = target.x;
+               int maxr = 185;
+               int minr = 135;
+               if(x>maxr) {
+                   rotateservo.setPower(0.5);
+               } else if(x<minr) {
+                   rotateservo.setPower(-0.5);
+               } else{
+                   rotateservo.setPower(0);
+               }
+           }
+       }
+   }
+}

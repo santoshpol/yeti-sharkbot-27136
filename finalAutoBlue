@@ -1,0 +1,254 @@
+package org.firstinspires.ftc.teamcode.SHARKBOT_Robotics_Teamcode;
+
+
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantFunction;
+import com.acmerobotics.roadrunner.ParallelAction;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.SequentialAction;
+import com.acmerobotics.roadrunner.Trajectory;
+import com.qualcomm.hardware.dfrobot.HuskyLens;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
+
+
+import org.firstinspires.ftc.teamcode.MecanumDrive;
+
+
+@Autonomous
+public class finalAutoBlue extends LinearOpMode {
+
+
+   DcMotor motorIntake;
+   CRServo servo1;
+   CRServo servo2;
+   CRServo servo3;
+   Servo servoPush;
+   CRServo rotateservo;
+   DcMotorEx motorOutake;
+
+
+   public class intakeOn implements InstantFunction {
+       @Override
+       public void run() {
+           motorIntake.setPower(1);
+           servo1.setPower(1);
+           servo2.setPower(1);
+       }
+   }
+
+
+   public class intakeOff implements InstantFunction {
+       @Override
+       public void run() {
+           motorIntake.setPower(0);
+           servo1.setPower(0);
+           servo2.setPower(0);
+       }
+   }
+
+
+   public class shootOn implements InstantFunction {
+       @Override
+       public void run() {
+           motorOutake.setVelocity(-1000);
+           sleep(250);
+           motorIntake.setPower(1);
+           servo1.setPower(1);
+           servo2.setPower(1);
+           servo3.setPower(-1);
+           sleep(2000);
+           servoPush.setPosition(0);
+           sleep(2500);
+       }
+   }
+
+
+   public class shootOnFar implements InstantFunction {
+       @Override
+       public void run() {
+           motorOutake.setVelocity(-2000);
+           sleep(250);
+           motorIntake.setPower(1);
+           servo1.setPower(1);
+           servo2.setPower(1);
+           servo3.setPower(-1);
+           sleep(2000);
+           servoPush.setPosition(0);
+           sleep(2500);
+       }
+   }
+
+
+   public class shootOff implements InstantFunction {
+       @Override
+       public void run() {
+           motorOutake.setVelocity(0);
+           motorIntake.setPower(0);
+           servo1.setPower(0);
+           servo2.setPower(0);
+           servo3.setPower(0);
+           servoPush.setPosition(1);
+       }
+   }
+
+
+   public class turnTurretRight implements InstantFunction {
+       @Override
+       public void run() {
+           rotateservo.setPower(1);
+           sleep(1750);
+           rotateservo.setPower(0);
+       }
+   }
+
+
+   public class turnTurretRightMore implements InstantFunction {
+       @Override
+       public void run() {
+           rotateservo.setPower(1);
+           sleep(2000);
+           rotateservo.setPower(0);
+       }
+   }
+
+
+   public class turnTurretRightMoreNormal implements InstantFunction {
+       @Override
+       public void run() {
+           rotateservo.setPower(-1);
+           sleep(2000);
+           rotateservo.setPower(0);
+       }
+   }
+
+
+   public class turnTurretLeft implements InstantFunction {
+       @Override
+       public void run() {
+           rotateservo.setPower(-1);
+           sleep(250);
+           rotateservo.setPower(0);
+       }
+   }
+
+
+   public class turnTurretLeftNormal implements InstantFunction {
+       @Override
+       public void run() {
+           rotateservo.setPower(-1);
+           sleep(250);
+           rotateservo.setPower(0);
+       }
+   }
+
+
+   public class turnTurretBack implements InstantFunction {
+       @Override
+       public void run() {
+           rotateservo.setPower(-1);
+           sleep(1750);
+           rotateservo.setPower(0);
+       }
+   }
+  
+  
+
+
+   @Override
+   public void runOpMode() throws InterruptedException {
+       motorIntake = hardwareMap.get(DcMotor.class, "perp");
+       servo1 = hardwareMap.get(CRServo.class, "servoRamp1");
+       servo2 = hardwareMap.get(CRServo.class, "servoRamp2");
+       servo3 = hardwareMap.get(CRServo.class, "servoRamp3");
+       rotateservo = hardwareMap.get(CRServo.class, "rotateServo");
+       servoPush = hardwareMap.get(Servo.class, "servoPush");
+       motorOutake = hardwareMap.get(DcMotorEx.class, "motorOutake");
+
+
+
+
+       //Beginning Position+Orientation
+       Pose2d beginPose = new Pose2d(-49, -49.5, Math.toRadians(234.65));
+
+
+       //introducing drivetrain
+       MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
+
+
+       //Creating path
+       Action path = drive.actionBuilder(beginPose)
+               //Shoot
+               .lineToY(-45)
+               .splineToSplineHeading(new Pose2d(-25, -10, Math.toRadians(-130)), Math.toRadians(-90))
+               .stopAndAdd(new turnTurretLeft())
+               .stopAndAdd(new shootOn())
+               .stopAndAdd(new shootOff())
+               .stopAndAdd(new turnTurretLeftNormal())
+               .turn(Math.toRadians(45))
+               //Intake
+               .splineToSplineHeading(new Pose2d(-10.5, -23.5, Math.toRadians(-90)), Math.toRadians(-90))
+               .stopAndAdd(new intakeOn())
+               .lineToY(-47)
+               .stopAndAdd(new intakeOff())
+
+
+               //Aim
+               .stopAndAdd(new turnTurretRight())
+
+
+               //Shoot
+               .stopAndAdd(new shootOn())
+               .stopAndAdd(new shootOff())
+
+
+               //Aim Back
+               .stopAndAdd(new turnTurretBack())
+
+
+               //Intake
+               .lineToY(-27)
+               .splineToSplineHeading(new Pose2d(12.5, -10, Math.toRadians(-90)), Math.toRadians(-90))
+               .stopAndAdd(new intakeOn())
+               .lineToY(-47)
+               .stopAndAdd(new intakeOff())
+
+
+               //Aim
+               .stopAndAdd(new turnTurretRight())
+
+
+               //Shoot
+               .stopAndAdd(new shootOn())
+               .stopAndAdd(new shootOff())
+
+
+               //Aim Turret Back
+               .stopAndAdd(new turnTurretBack())
+
+
+               //Intake
+               .splineToSplineHeading(new Pose2d(35, -10, Math.toRadians(-90)), Math.toRadians(-90))
+               .stopAndAdd(new intakeOn())
+               .lineToY(-47)
+               .stopAndAdd(new intakeOff())
+
+
+               //Aim
+               .stopAndAdd(new turnTurretRightMore())
+
+
+               //Shoot
+               .stopAndAdd(new shootOnFar())
+               .stopAndAdd(new shootOff())
+               .build();
+       waitForStart();
+       Actions.runBlocking(new SequentialAction(path));
+   }}

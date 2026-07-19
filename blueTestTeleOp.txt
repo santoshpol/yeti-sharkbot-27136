@@ -1,0 +1,315 @@
+package org.firstinspires.ftc.teamcode.SHARKBOT_Robotics_Teamcode;
+
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Rotation2d;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.MecanumDrive;
+
+@TeleOp
+public class blueTestTeleOp extends OpMode {
+    private MecanumDrive drive;
+    private DcMotorEx motorOutake, rotateMotor;
+    private DcMotor motorIntake;
+
+    private DcMotor RampMotor;
+
+    private Limelight3A limelight;
+
+    private DigitalChannel limitSwitch;
+
+    private Servo flicker;
+
+    private double targetPosition;
+
+    private NormalizedColorSensor colorSensor;
+    boolean green;
+    boolean purple;
+
+    public double angleWrap(double angle) {
+        while (angle > 180) {
+            angle -= 360;
+        }
+        while (angle < -180) {
+            angle += 360;
+        }
+
+        return angle;
+    }
+
+    enum turretState {
+        HALO,
+        SWITCH,
+        NORMAL
+    }
+
+    turretState state = turretState.NORMAL;
+
+    @Override
+    public void init() {
+        drive = new MecanumDrive(hardwareMap, new Pose2d(blueAuto.x, blueAuto.y, blueAuto.heading ) );
+
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorSensor");
+        colorSensor.setGain(35);
+
+        RampMotor = hardwareMap.get(DcMotor.class, "perp");
+        RampMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        flicker = hardwareMap.get(Servo.class, "servoPush");
+
+        motorIntake = hardwareMap.get(DcMotor.class, "par");
+        motorIntake.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        motorOutake = hardwareMap.get(DcMotorEx.class, "motorOutake");
+        motorOutake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorOutake.setDirection(DcMotorSimple.Direction.REVERSE);
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(67, 0, 0, 25);
+        motorOutake.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        rotateMotor = hardwareMap.get(DcMotorEx.class, "rotateMotor");
+        rotateMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rotateMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rotateMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+
+
+
+        limitSwitch = hardwareMap.get(DigitalChannel.class, "magneticLimitSiwtch");
+        limitSwitch.setMode(DigitalChannel.Mode.INPUT);
+
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.pipelineSwitch(8);
+        limelight.start();
+
+
+        //Telemetry Updating
+        telemetry.addLine("Init Complete");
+        telemetry.update();
+    }
+
+    ElapsedTime lastLimelightResult = new ElapsedTime();
+    ElapsedTime halo = new ElapsedTime();
+
+    @Override
+    public void loop() {
+        if(gamepad1.a) {
+            drive = new MecanumDrive(hardwareMap, new Pose2d(17.15, -64, Math.toRadians(236) ) );
+        }
+
+
+        drive.updatePoseEstimate();
+        Pose2d currentPose = drive.localizer.getPose();
+
+
+        double currentX = currentPose.position.x;
+        double currentY = currentPose.position.y;
+
+        double currentDistance =
+                Math.sqrt(
+                        Math.pow(currentY + 49.5, 2) + Math.pow(currentX + 49, 2));
+
+        //Moving Robot Around
+        drive.setDrivePowers(
+                new PoseVelocity2d(new Vector2d(
+                        -gamepad1.left_stick_y, -gamepad1.left_stick_x), -gamepad1.right_stick_x)
+        );
+
+
+
+        double currentHeading = Math.toDegrees(currentPose.heading.toDouble());
+
+        double blueX = -49;
+        double blueY = -49.5;
+
+        double ticksPerDegree = 5.97222222222;
+
+        //Radians
+        double angleToGoalRad = Math.atan2(blueY - currentY, blueX - currentX);
+        double relativeRad = angleToGoalRad - currentPose.heading.toDouble();
+        double wrappedRad = Math.atan2(Math.sin(relativeRad), Math.cos(relativeRad));
+
+        // Degrees
+        double targetAngleDeg = Math.toDegrees(wrappedRad);
+
+        //Fastest Route
+        double deltaAngle = angleWrap(targetAngleDeg - rotateMotor.getCurrentPosition() / ticksPerDegree);
+        // Convert to Ticks
+
+
+        LLResult llResult = limelight.getLatestResult();
+
+        double llX = llResult.getTx();
+        double absolute = Math.abs(llX);
+
+        boolean limitState = !limitSwitch.getState();
+
+        targetPosition = rotateMotor.getCurrentPosition() + deltaAngle * ticksPerDegree;
+
+        if(llResult.isValid()) {
+            lastLimelightResult.reset();
+        }
+
+        motorOutake.setVelocity((6.59584*currentDistance)+200);
+
+        if(rotateMotor.getCurrentPosition()>1250 || rotateMotor.getCurrentPosition()<-850) {
+            if(state != turretState.HALO) {
+                halo.reset();
+                state = turretState.HALO;
+            }
+        } else{
+            if(limitState) {
+                if(state!=turretState.SWITCH) {
+                    state = turretState.SWITCH;
+                }
+            }
+        }
+
+
+
+
+
+        switch (state) {
+            case HALO:
+                //731
+                //600
+                //-700
+                if(rotateMotor.getCurrentPosition()>580) {
+                    rotateMotor.setTargetPosition(-690);
+                    rotateMotor.setPower(1);
+                    rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                } else if(rotateMotor.getCurrentPosition()<-685) {
+                    rotateMotor.setTargetPosition(700);
+                    rotateMotor.setPower(-1);
+                    rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                }
+
+                if (rotateMotor.getCurrentPosition()<585 && rotateMotor.getCurrentPosition()>-685 && halo.seconds()>1) {
+                    state = turretState.NORMAL;
+                }
+                break;
+
+            case SWITCH:
+                rotateMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+                rotateMotor.setTargetPosition((int) targetPosition);
+                rotateMotor.setPower(1);
+                rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                state = turretState.NORMAL;
+                break;
+
+            case NORMAL:
+                if(lastLimelightResult.seconds()<0.2) {
+                    if (absolute > 0.5) {
+                        rotateMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                        rotateMotor.setPower(-0.025 * llX);
+                    } else {
+                        rotateMotor.setPower(0);
+                    }
+                } else {
+                    rotateMotor.setTargetPosition((int) targetPosition);
+                    rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                    if (gamepad1.right_stick_x != 0) {
+                        rotateMotor.setPower(gamepad1.right_stick_x*1.5);
+                    } else {
+                        rotateMotor.setPower(0.2);
+                    }
+                }
+                break;
+        }
+
+
+
+
+
+        //Intake+Ramp Code
+        //Ramp Code
+        NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+        //Makes it more accurate based on light
+        float normRed, normGreen, normBlue;
+        normRed = colors.red/colors.alpha;
+        normGreen = colors.green/colors.alpha;
+        normBlue = colors.blue/colors.alpha;
+
+        if(normGreen > 2*normRed) {
+            purple = false;
+            green = true;
+            telemetry.addData("Ball: ", "green");
+        } else if(normBlue > normGreen && normBlue>normRed) {
+            green = false;
+            purple =true;
+            telemetry.addData("Ball: ", "purple");
+        } else{
+            telemetry.addLine("No ball");
+            purple = false;
+            green = false;
+        }
+
+        if(gamepad2.right_trigger >0) {
+            if(!purple && !green) {
+                motorIntake.setPower(gamepad2.right_trigger);
+                RampMotor.setPower(0.5);
+            } else{
+                motorIntake.setPower(gamepad2.right_trigger);
+                RampMotor.setPower(0);
+            }
+        } else if(gamepad2.b){
+            motorIntake.setPower(1);
+            RampMotor.setPower(1);
+        } else{
+            motorIntake.setPower(0);
+            RampMotor.setPower(0);
+        }
+
+        if(gamepad2.dpad_up) {
+            flicker.setPosition(0);
+        } else{
+            flicker.setPosition(1);
+        }
+
+
+
+
+
+        //Telemetry Data
+
+        //Drivetrain + Turret
+        telemetry.addLine("Drivetrain:");
+
+        telemetry.addData("Distance From Goal: ", currentDistance);
+        telemetry.addData("x: ", currentX);
+        telemetry.addData("y: ", currentY);
+        telemetry.addData("Heading", currentPose.heading.toDouble());
+
+        //Outake
+        telemetry.addLine("Outake:");
+
+        telemetry.addData("Turret Position: ", rotateMotor.getCurrentPosition());
+        telemetry.addData("Limelight X: ", llX);
+        telemetry.addData("Limleight Status: ", llResult.isValid());
+        telemetry.addData("Turret Velocity: ", motorOutake.getVelocity());
+
+        //Ramp+Intake
+        telemetry.addLine("Ramp + Intake: ");
+
+        telemetry.addData("Red: ", normRed);
+        telemetry.addData("Blue: ", normBlue);
+        telemetry.addData("Gereen: ", normGreen);
+
+        telemetry.update();
+
+    }
+}

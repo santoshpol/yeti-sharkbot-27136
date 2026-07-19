@@ -14,15 +14,18 @@ public class TurretAutoAlignOpmode extends OpMode {
     private TurretMechanism turret = new TurretMechanism();
 
 
+    
+
+
 
     @Override
     public void init() {
-        limelight3A = hardwareMap.get(Limelight3A.class, "limelight3A");
+        limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
         limelight3A.pipelineSwitch(8);
         turret.init(hardwareMap);
 
     }
-
+     @Override
     public void start() {
         turret.resetTimer();
        limelight3A.start();

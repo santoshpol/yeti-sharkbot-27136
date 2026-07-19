@@ -3,15 +3,12 @@ This repository will be available to sharkbot Team.
 
 ## Sharkbot Team at center on Sunday 1-3 and Wednesday 6-8
 Santosh B Pol <br> 
-Nihal D <br>
 Tanuj S Pol <br>
-Aryan Dhoot <br>
 Ahaan S Manas <br>
 Nathan Pynadath <br>
-Abhay Gopan <br>
-Anirudh Chillara <br>
-Ridhaan Somal <br>
-Dhruv Rathi <br>
 Neel Sarda <br>
 Naitik Rathi <br>
 Viaan Bang <br>
+Sreethan Bhuma <br>
+Aarush Padmanabhuni <br>
+Samarth Choudary <br>

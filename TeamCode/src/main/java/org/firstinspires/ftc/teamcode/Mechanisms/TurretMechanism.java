@@ -1,12 +1,12 @@
 package org.firstinspires.ftc.teamcode.Mechanisms;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 
 public class TurretMechanism {
 
@@ -20,7 +20,7 @@ public class TurretMechanism {
     private double power = 0.0;
     private final ElapsedTime timer = new ElapsedTime();
 
-    private void init (HardwareMap hwMap) {
+    public void init (HardwareMap hwMap) {
         rotateMotor = hwMap.get(DcMotorEx.class, "rotateMotor");
         rotateMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
@@ -45,17 +45,17 @@ public class TurretMechanism {
         timer.reset();
     }
 
-    public void update(AprilTagDetection curID) {
+    public void update(LLResult llresult) {
            double deltaTime = timer.seconds();
            timer.reset();
 
-           if (curID == null) {
+           if (llresult == null || !llresult.isValid()) {
                rotateMotor.setPower(0);
                lastError = 0;
                        return;
            }
 
-           double error = goalX - curID.ftcPose.bearing;
+           double error = goalX - llresult.getTx();
            double pTerm = error * kP;
            double dTerm = 0;
            if (deltaTime > 0) {

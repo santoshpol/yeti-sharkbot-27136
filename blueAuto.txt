@@ -1,0 +1,411 @@
+package org.firstinspires.ftc.teamcode.SHARKBOT_Robotics_Teamcode;
+import androidx.annotation.NonNull;
+import com.acmerobotics.dashboard.telemetry.TelemetryPacket;
+import com.acmerobotics.roadrunner.Action;
+import com.acmerobotics.roadrunner.InstantFunction;
+import com.acmerobotics.roadrunner.ParallelAction;
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.PoseVelocity2d;
+import com.acmerobotics.roadrunner.Vector2d;
+import com.acmerobotics.roadrunner.ftc.Actions;
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
+import com.qualcomm.robotcore.hardware.NormalizedColorSensor;
+import com.qualcomm.robotcore.hardware.NormalizedRGBA;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import org.firstinspires.ftc.teamcode.MecanumDrive;
+import org.jetbrains.annotations.NotNull;
+
+
+@Autonomous(name = "blueAuto")
+public class blueAuto extends LinearOpMode {
+    public static double currentPos;
+    MecanumDrive drive;
+    private DcMotorEx motorOutake, rotateMotor;
+    private DcMotor motorIntake;
+    //public DcMotor frontLeft, backLeft, frontRight, backRight,
+
+
+
+    private DcMotor RampMotor;
+    private Servo flicker;
+
+    private Limelight3A limelight;
+
+    private DigitalChannel limitSwitch;
+
+    private double targetPosition;
+
+    private NormalizedColorSensor colorSensor;
+    boolean green;
+    boolean purple;
+
+    boolean shoot = false;
+
+    boolean zero = false;
+
+    public static double heading;
+    public static double x;
+    public static double y;
+
+    enum turretState {
+        HALO,
+        NORMAL
+    }
+
+    turretState state = turretState.NORMAL;
+
+    ElapsedTime halo = new ElapsedTime();
+
+    ElapsedTime lastLimelightResult = new ElapsedTime();
+
+
+
+
+    public double angleWrap(double angle) {
+        while (angle > 180) {
+            angle -= 360;
+        }
+        while (angle < -180) {
+            angle += 360;
+        }
+
+        return angle;
+    }
+
+
+    public class waitForZero implements Action {
+        LLResult llResult = limelight.getLatestResult();
+        @Override
+        public boolean run(@NonNull TelemetryPacket telemetryPacket) {
+            sleep(1);
+            if (rotateMotor.getPower() > 0 || rotateMotor.getPower() < 0) {
+                return true;
+            } else {
+                return false;
+            }
+            }
+        }
+
+    public class shootOn implements InstantFunction {
+        @Override
+        public void run() {
+            shoot = true;
+            motorIntake.setPower(1);
+            RampMotor.setPower(1);
+            sleep(350);
+            flicker.setPosition(0);
+            sleep(500);
+            flicker.setPosition(1);
+        }
+    }
+
+    public class shootOff implements InstantFunction {
+        @Override
+        public void run() {
+            shoot = false;
+        }
+    }
+
+    public class zeroTrue implements InstantFunction {
+        @Override
+        public void run() {
+            zero = true;
+        }
+    }
+
+    public class turretTracking implements Action {
+
+        public boolean run(@NotNull TelemetryPacket telemetryPacket) {
+
+            drive.updatePoseEstimate();
+            Pose2d currentPose = drive.localizer.getPose();
+
+            double currentX = currentPose.position.x;
+            double currentY = currentPose.position.y;
+
+            x = currentX;
+            y= currentY;
+            heading = currentPose.heading.toDouble();
+
+            double blueX = -49;
+            double blueY = -49.5;
+
+            double ticksPerDegree = 5.97222222222;
+
+            //Radians
+            double angleToGoalRad = Math.atan2(blueY - currentY, blueX - currentX);
+            double relativeRad = angleToGoalRad - currentPose.heading.toDouble();
+            double wrappedRad = Math.atan2(Math.sin(relativeRad), Math.cos(relativeRad));
+
+            // Degrees
+            double targetAngleDeg = Math.toDegrees(wrappedRad);
+
+            //Fastest Route
+            double deltaAngle = angleWrap(targetAngleDeg - rotateMotor.getCurrentPosition() / ticksPerDegree);
+            // Convert to Ticks
+
+
+            LLResult llResult = limelight.getLatestResult();
+
+            double llX = llResult.getTx();
+            double absolute = Math.abs(llX);
+
+            targetPosition = rotateMotor.getCurrentPosition() + deltaAngle * ticksPerDegree;
+
+            double currentDistance =
+                    Math.sqrt(
+                            Math.pow(currentY + 49.5, 2) + Math.pow(currentX + 49, 2));
+
+
+            if(llResult.isValid() && llResult!=null) {
+                lastLimelightResult.reset();
+            }
+
+            motorOutake.setVelocity((6.59584*currentDistance)+601);
+
+
+            if(rotateMotor.getCurrentPosition()<-840 || rotateMotor.getCurrentPosition()>1240) {
+                if(state != turretState.HALO) {
+                    halo.reset();
+                    state = turretState.HALO;
+                }
+            }
+
+            if (zero) {
+                rotateMotor.setTargetPosition(0);
+                rotateMotor.setPower(1);
+                rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                } else {
+                switch (state) {
+                    case HALO:
+                        //731
+                        //600
+                        //-700
+                        if(rotateMotor.getCurrentPosition()>580) {
+                            rotateMotor.setTargetPosition(-690);
+                            rotateMotor.setPower(1);
+                            rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        } else if(rotateMotor.getCurrentPosition()<-685) {
+                            rotateMotor.setTargetPosition(700);
+                            rotateMotor.setPower(-1);
+                            rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                        }
+
+                        if (rotateMotor.getCurrentPosition()<585 && rotateMotor.getCurrentPosition()>-685 && halo.seconds()>1) {
+                            state = turretState.NORMAL;
+                        }
+                        break;
+
+                    case NORMAL:
+                        if (lastLimelightResult.seconds() < 0.05) {
+                            if (absolute > 0.5) {
+                                rotateMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                                rotateMotor.setPower(-0.025 * llX);
+                            } else {
+                                rotateMotor.setPower(0);
+                            }
+                        } else {
+                            rotateMotor.setTargetPosition((int) targetPosition);
+                            rotateMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+                            if (gamepad1.right_stick_x != 0) {
+                                rotateMotor.setPower(gamepad1.right_stick_x);
+                            } else {
+                                rotateMotor.setPower(0.2);
+                            }
+                        }
+                        break;
+                }
+                }
+
+            telemetry.addData("Turret Position: ", rotateMotor.getCurrentPosition());
+            telemetry.addData("Distance From Goal: ", currentDistance);
+            telemetry.addData("x: ", currentX);
+            telemetry.addData("heading: ", currentPose.heading.toDouble());
+            telemetry.addData("y: ", currentY);
+            telemetry.addData("Limelight X: ", llX);
+            telemetry.addData("Limleight Status: ", llResult.isValid());
+            telemetry.addData("Mode: ", state);
+            telemetry.update();
+
+            return true;
+        }
+    }
+
+
+    public class IntakeRamp implements Action {
+        public boolean run(@NotNull TelemetryPacket telemetryPacket) {
+
+            //Intake+Ramp Code
+            NormalizedRGBA colors = colorSensor.getNormalizedColors();
+
+            //Makes it more accurate based on light
+            float normRed, normGreen, normBlue;
+            normRed = colors.red / colors.alpha;
+            normGreen = colors.green / colors.alpha;
+            normBlue = colors.blue / colors.alpha;
+            if(normGreen > 2*normRed) {
+                purple = false;
+                green = true;
+                telemetry.addData("Ball: ", "green");
+            } else if(normBlue > normGreen && normBlue>normRed) {
+                green = false;
+                purple =true;
+                telemetry.addData("Ball: ", "purple");
+            } else{
+                telemetry.addLine("No ball");
+                purple = false;
+                green = false;
+            }
+
+            if(!shoot) {
+                if(!purple && !green) {
+                    motorIntake.setPower(1);
+                    RampMotor.setPower(0.3);
+                } else{
+                    motorIntake.setPower(1);
+                    RampMotor.setPower(0);
+                }
+            }
+
+            return true;
+
+    }
+    }
+
+    @Override
+    public void runOpMode() throws InterruptedException {
+        drive = new MecanumDrive(hardwareMap, new Pose2d(-61, -36, Math.toRadians(270) ) );
+
+        //Update sensor gain with pure red blue and green chips or blocks
+        colorSensor = hardwareMap.get(NormalizedColorSensor.class, "colorSensor");
+        //Update below
+        colorSensor.setGain(35);
+
+        motorIntake = hardwareMap.get(DcMotor.class, "par");
+        motorIntake.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        //Ramp
+        RampMotor = hardwareMap.get(DcMotor.class, "perp");
+        RampMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        flicker = hardwareMap.get(Servo.class, "servoPush");
+
+        motorOutake = hardwareMap.get(DcMotorEx.class, "motorOutake");
+        motorOutake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        motorOutake.setDirection(DcMotorSimple.Direction.REVERSE);
+        PIDFCoefficients pidfCoefficients = new PIDFCoefficients(55, 0, 0, 25);
+        motorOutake.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidfCoefficients);
+
+        rotateMotor = hardwareMap.get(DcMotorEx.class, "rotateMotor");
+        rotateMotor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rotateMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        rotateMotor.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.pipelineSwitch(8);
+        limelight.start();
+
+        limitSwitch = hardwareMap.get(DigitalChannel.class, "magneticLimitSiwtch");
+        limitSwitch.setMode(DigitalChannel.Mode.INPUT);
+
+
+        //Telemetry Updating
+        telemetry.addLine("Init Complete");
+        telemetry.update();
+
+        //Beginning Position+Orientation
+        Pose2d beginPose = new Pose2d(-55, -40, Math.toRadians(270));
+
+
+
+
+        //Drivetrain
+        MecanumDrive drive = new MecanumDrive(hardwareMap, beginPose);
+
+
+
+
+        Action path = drive.actionBuilder(beginPose)
+                .stopAndAdd(new shootOff())
+                .strafeTo(new Vector2d(-9, -25))
+                //Shoot
+                .stopAndAdd(new waitForZero())
+                .stopAndAdd(new shootOn())
+                .stopAndAdd(new shootOff())
+
+                //#1
+
+                //Intake
+                .lineToY(-58)
+                //Shoot
+                .lineToY(-25)
+                .stopAndAdd(new waitForZero())
+                .stopAndAdd(new shootOn())
+                .stopAndAdd(new shootOff())
+
+                //#2
+
+                //Intake
+                .splineToConstantHeading(new Vector2d(17, -19.5), 0)
+                .splineToSplineHeading(new Pose2d(17.5, -30, Math.toRadians(-90)), Math.toRadians(-90))
+                .lineToY(-58)
+
+                .strafeTo(new Vector2d(-9, -25))
+                //Shoot
+                .stopAndAdd(new waitForZero())
+                .stopAndAdd(new shootOn())
+                .stopAndAdd(new shootOff())
+
+                //#3
+                .strafeTo(new Vector2d(5, -40))
+                .splineToSplineHeading(new Pose2d(18, -64.25, Math.toRadians(236)), Math.toRadians(270))
+                .waitSeconds(1.25)
+
+                .strafeTo(new Vector2d(-9, -20))
+                //Shoot
+                .stopAndAdd(new waitForZero())
+                .stopAndAdd(new shootOn())
+                .stopAndAdd(new shootOff())
+
+                //#4
+                .strafeTo(new Vector2d(17.15, -64))
+                .waitSeconds(1.25)
+
+                .strafeTo(new Vector2d(-9, -20))
+                //Shoot
+                .stopAndAdd(new waitForZero())
+                .stopAndAdd(new shootOn())
+                .stopAndAdd(new shootOff())
+
+                .stopAndAdd(new zeroTrue())
+
+                .strafeTo(new Vector2d(17.15, -64))
+                .waitSeconds(1.25)
+
+                .strafeTo(new Vector2d(-9, -20))
+                //Shoot
+                .stopAndAdd(new waitForZero())
+                .stopAndAdd(new shootOn())
+                .stopAndAdd(new shootOff())
+
+                //#5
+                .strafeTo(new Vector2d(3, -20))
+                .build();
+
+
+
+
+        waitForStart();
+        Actions.runBlocking(new ParallelAction(path, new turretTracking(), new IntakeRamp()));
+    }
+}
